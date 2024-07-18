@@ -1,29 +1,25 @@
 data "azurerm_resource_group" "rgrp" {
-  provider = hcaazurerm3
-  name     = var.resource_group_name
-}
-
-resource "random_id" "random_suffix" {
-  byte_length = 8
+  name = var.resource_group_name
 }
 
 resource "azurerm_storage_account" "this" {
-  provider            = hcaazurerm3
-  name                = local.storage_name
-  resource_group_name = var.resource_group_name != null ? var.resource_group_name : data.azurerm_resource_group.rgrp.name
-  location            = var.storage_account_location != null ? var.storage_account_location : data.azurerm_resource_group.rgrp.location
+  # Required
+  name                     = local.storage_name
+  resource_group_name      = var.resource_group_name != null ? var.resource_group_name : data.azurerm_resource_group.rgrp.name
+  location                 = var.storage_account_location != null ? var.storage_account_location : data.azurerm_resource_group.rgrp.location
+  account_replication_type = var.account_replication_type
+  account_tier             = var.account_kind == "BlockBlobStorage" || var.account_kind == "FileStorage" ? "Premium" : var.account_tier
 
-  account_replication_type          = var.account_replication_type
-  account_tier                      = var.account_kind == "BlockBlobStorage" || var.account_kind == "FileStorage" ? "Premium" : var.account_tier
+  # Optional
   access_tier                       = local.access_tier
   account_kind                      = var.account_kind
-  allow_nested_items_to_be_public   = false # This is a hard coded HCA requirement - Sentinel
+  allow_nested_items_to_be_public   = var.allow_nested_items_to_be_public
   allowed_copy_scope                = var.allowed_copy_scope
-  cross_tenant_replication_enabled  = false # This is a hard coded HCA requirement - Wiz.io
+  cross_tenant_replication_enabled  = var.cross_tenant_replication_enabled
   default_to_oauth_authentication   = var.default_to_oauth_authentication
   edge_zone                         = var.edge_zone
-  enable_https_traffic_only         = true # This is a hard coded HCA requirement - Sentinel
-  infrastructure_encryption_enabled = true # This is a hard coded HCA requirement - Sentinel
+  enable_https_traffic_only         = var.enable_https_traffic_only
+  infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
   is_hns_enabled                    = var.is_hns_enabled
   large_file_share_enabled          = var.large_file_share_enabled
   min_tls_version                   = var.min_tls_version
@@ -58,9 +54,7 @@ resource "azurerm_storage_account" "this" {
     }
   }
   dynamic "blob_properties" {
-    for_each = var.account_kind == "FileStorage" ? [] : (
-      var.blob_properties == null ? [local.blob_properties_defaults] : [var.blob_properties]
-    )
+    for_each = var.account_kind == "FileStorage" ? [] : [var.blob_properties]
 
     content {
       change_feed_enabled           = blob_properties.value.change_feed_enabled
@@ -174,7 +168,7 @@ resource "azurerm_storage_account" "this" {
     for_each = var.routing == null ? [] : [var.routing]
     content {
       choice                      = routing.value.choice
-      publish_internet_endpoints  = false # This is a hard coded HCA requirement - Sentinel
+      publish_internet_endpoints  = routing.publish_internet_endpoints
       publish_microsoft_endpoints = routing.value.publish_microsoft_endpoints
     }
   }
@@ -186,7 +180,7 @@ resource "azurerm_storage_account" "this" {
     }
   }
   dynamic "share_properties" {
-    for_each = local.share_properties == null ? [] : [local.share_properties]
+    for_each = var.account_kind == "BlockBlobStorage" ? [] : [var.share_properties]
     content {
       dynamic "cors_rule" {
         for_each = share_properties.value.cors_rule == null ? [] : share_properties.value.cors_rule
@@ -213,7 +207,7 @@ resource "azurerm_storage_account" "this" {
           channel_encryption_type         = smb.value.channel_encryption_type
           kerberos_ticket_encryption_type = smb.value.kerberos_ticket_encryption_type
           multichannel_enabled            = smb.value.multichannel_enabled
-          versions                        = ["SMB3.1.1"] # This is a hard coded HCA requirement - Wiz.io
+          versions                        = smb.value.versions
         }
       }
     }
@@ -234,22 +228,9 @@ resource "azurerm_storage_account" "this" {
       update = timeouts.value.update
     }
   }
-
-  lifecycle {
-    precondition {
-      condition = (
-        var.account_replication_type == "LRS" && local.app_environment == "prod" ?
-        false : true
-      )
-      error_message = "account_replication_type `LRS` is invalid for prod environments."
-
-    }
-  }
 }
 
 resource "azurerm_management_lock" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for key, lock in var.management_locks : key => lock if lock == true
   }
@@ -261,8 +242,6 @@ resource "azurerm_management_lock" "this" {
 }
 
 resource "azurerm_storage_blob_inventory_policy" "this" {
-  provider = hcaazurerm3
-
   count = var.blob_inventory_policy == null ? 0 : 1
 
   storage_account_id = azurerm_storage_account.this.id
@@ -297,8 +276,6 @@ resource "azurerm_storage_blob_inventory_policy" "this" {
 }
 
 resource "azurerm_storage_blob" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for blob in local.blob : "${blob.container_key}.${blob.blob_key}" => blob
   }
@@ -332,8 +309,6 @@ resource "azurerm_storage_blob" "this" {
 }
 
 resource "azurerm_storage_account_local_user" "this" {
-  provider = hcaazurerm3
-
   for_each = var.storage_account_local_user
 
   name                 = each.value.name
@@ -379,12 +354,11 @@ resource "azurerm_storage_account_local_user" "this" {
 }
 
 resource "azurerm_storage_account_network_rules" "this" {
-  provider                   = hcaazurerm3
-  default_action             = "Deny"
+  default_action             = var.network_rules.default_action
   storage_account_id         = azurerm_storage_account.this.id
   bypass                     = var.network_rules.bypass
-  ip_rules                   = try(local.allowed_ips, [])
-  virtual_network_subnet_ids = try(local.allowed_subnets, [])
+  ip_rules                   = try(var.network_rules.ips_rules, [])
+  virtual_network_subnet_ids = try(var.network_rules.virtual_network_subnet_ids, [])
 
   dynamic "private_link_access" {
     for_each = var.network_rules.private_link_access == null ? [] : var.network_rules.private_link_access
@@ -405,8 +379,6 @@ resource "azurerm_storage_account_network_rules" "this" {
 }
 
 resource "azurerm_storage_container" "this" {
-  provider = hcaazurerm3
-
   for_each = { for container in var.storage_container : container.name => container }
 
   name                  = each.value.name
@@ -426,8 +398,7 @@ resource "azurerm_storage_container" "this" {
 }
 
 resource "azurerm_storage_management_policy" "this" {
-  provider = hcaazurerm3
-  count    = var.management_policy != null ? 1 : 0
+  count = var.management_policy != null ? 1 : 0
 
   storage_account_id = azurerm_storage_account.this.id
 
@@ -502,8 +473,6 @@ resource "azurerm_storage_management_policy" "this" {
 }
 
 resource "azurerm_storage_queue" "this" {
-  provider = hcaazurerm3
-
   for_each = { for queue in var.storage_queue : queue.name => queue }
 
   name                 = each.value.name
@@ -524,8 +493,6 @@ resource "azurerm_storage_queue" "this" {
 }
 
 resource "azurerm_storage_share" "this" {
-  provider = hcaazurerm3
-
   for_each = { for share in var.storage_share : share.name => share }
 
   name                 = each.value.name
@@ -589,8 +556,6 @@ resource "azurerm_storage_share" "this" {
 }
 
 resource "azurerm_storage_share_directory" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for directories in local.directories : "${directories.share_key}.${directories.directories_key}" => directories
   }
@@ -614,8 +579,6 @@ resource "azurerm_storage_share_directory" "this" {
 }
 
 resource "azurerm_storage_share_file" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for files in local.files : "${files.share_key}.${files.directories_key}.${files.files_key}" => files
   }
@@ -645,8 +608,6 @@ resource "azurerm_storage_share_file" "this" {
 }
 
 resource "azurerm_storage_table" "this" {
-  provider = hcaazurerm3
-
   for_each = { for table in var.storage_table : table.name => table }
 
   name                 = each.value.name
@@ -701,8 +662,6 @@ resource "azurerm_storage_table" "this" {
 }
 
 resource "azurerm_storage_table_entity" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for entity in local.entities : "${entity.table_key}.${entity.entity_key}" => entity
   }
@@ -717,7 +676,6 @@ resource "azurerm_storage_table_entity" "this" {
 }
 
 resource "azurerm_storage_data_lake_gen2_filesystem" "this" {
-  provider = hcaazurerm3
   for_each = { for data in var.data_lake_gen2 : data.name => data }
 
   name               = each.value.name
@@ -750,8 +708,6 @@ resource "azurerm_storage_data_lake_gen2_filesystem" "this" {
 }
 
 resource "azurerm_storage_data_lake_gen2_path" "this" {
-  provider = hcaazurerm3
-
   for_each = {
     for directory in local.directory : "${directory.filesystem_key}.${directory.directory_key}" => directory
   }

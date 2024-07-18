@@ -1,0 +1,51 @@
+name: Formatting Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: Terraform Formatting
+    runs-on: ubuntu-latest
+    environment: Validate
+    steps:
+      - name: Cleanup working directory
+        id: pre_run_cleanup
+        run: |      
+          sudo find . -mindepth 1 -delete
+        if: always()
+
+      - name: Checkout code
+        id: checkout_code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Terraform
+        id: setup_terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.x
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        id: terraform_fmt_check
+        run: terraform fmt -recursive -check
+        shell: bash
+        continue-on-error: false
+
+      - name: Cleanup working directory
+        id: post_run_cleanup
+        run: |      
+          sudo find . -mindepth 1 -delete
+        if: always()

@@ -1,28 +1,29 @@
 data "azurerm_subnet" "test_sub" {
-  provider             = hcaazurerm3
   name                 = "default"
   virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
 }
 
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
+resource "random_id" "random_suffix" {
+  byte_length = 8
+}
 
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+locals {
+  tags = {
+    env            = "prod"
+    app_code       = "tst"
+    app_instance   = "tbd"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+  }
 }
 
 module "azure_storage_account_standard_storagev2" {
   source              = "../../"
-  tags                = module.tagging.labels
+  tags                = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
   resource_group_name = var.resource_group_name
 
   management_locks = {
@@ -31,6 +32,7 @@ module "azure_storage_account_standard_storagev2" {
   }
 
   network_rules = {
+    default_action = "Allow"
     virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
   }
 
@@ -188,7 +190,7 @@ module "azure_storage_account_standard_storagev2" {
       metadata = {
         testkey        = "testvalue"
         queuetype      = module.azure_storage_account_standard_storagev2.storage_account_tier
-        classification = module.tagging.labels.classification
+        classification = local.tags.classification
       }
     },
     {

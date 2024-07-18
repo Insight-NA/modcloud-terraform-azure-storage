@@ -5,31 +5,28 @@
 
 ```hcl
 data "azurerm_subnet" "test_sub" {
-  provider             = hcaazurerm3
+  
   name                 = "default"
   virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
 }
 
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
-
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+locals {
+  tags = {
+    env            = "prod"
+    app_code       = "tst"
+    app_instance   = "tbd"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+  }
 }
 
 module "azure_storage_account_standard_storagev2" {
   source                  = "app.terraform.io/hca-healthcare/storageaccount/azure"
   version                 = "~>4.2.0"
-  tags                = module.tagging.labels
+  tags                = local.tags
   resource_group_name = var.resource_group_name
 
   management_locks = {

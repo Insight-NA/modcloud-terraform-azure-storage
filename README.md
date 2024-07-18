@@ -146,31 +146,27 @@ azure-storage-account-minute-metrics-retention-days-require.sentinel - retention
 
 ```hcl
 data "azurerm_subnet" "test_sub" {
-  provider             = hcaazurerm3
   name                 = "default"
   virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
 }
 
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
-
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+locals {
+  tags = {
+    env            = "prod"
+    app_code       = "tst"
+    app_instance   = "tbd"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+  }
 }
 
 module "azure_storage_account_standard_storagev2" {
   source              = "app.terraform.io/hca-healthcare/storageaccount/azure"
   version             = "~>4.2.0"
-  tags                = module.tagging.labels
+  tags                = local.tags
   resource_group_name = var.resource_group_name
 
   management_locks = {
@@ -482,15 +478,15 @@ module "azure_storage_account_standard_storagev2" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >=1.3 |
-| <a name="requirement_hcaazurerm3"></a> [hcaazurerm3](#requirement\_hcaazurerm3) | ~> 3.95 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.95 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >=3.6.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_hcaazurerm3"></a> [hcaazurerm3](#provider\_hcaazurerm3) | 3.95.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.6.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.95 |
+| <a name="provider_random"></a> [random](#provider\_random) | >=3.6.0 |
 
 ## Modules
 
@@ -500,24 +496,24 @@ No modules.
 
 | Name | Type |
 |------|------|
-| hcaazurerm3_azurerm_management_lock.this | resource |
-| hcaazurerm3_azurerm_storage_account.this | resource |
-| hcaazurerm3_azurerm_storage_account_local_user.this | resource |
-| hcaazurerm3_azurerm_storage_account_network_rules.this | resource |
-| hcaazurerm3_azurerm_storage_blob.this | resource |
-| hcaazurerm3_azurerm_storage_blob_inventory_policy.this | resource |
-| hcaazurerm3_azurerm_storage_container.this | resource |
-| hcaazurerm3_azurerm_storage_data_lake_gen2_filesystem.this | resource |
-| hcaazurerm3_azurerm_storage_data_lake_gen2_path.this | resource |
-| hcaazurerm3_azurerm_storage_management_policy.this | resource |
-| hcaazurerm3_azurerm_storage_queue.this | resource |
-| hcaazurerm3_azurerm_storage_share.this | resource |
-| hcaazurerm3_azurerm_storage_share_directory.this | resource |
-| hcaazurerm3_azurerm_storage_share_file.this | resource |
-| hcaazurerm3_azurerm_storage_table.this | resource |
-| hcaazurerm3_azurerm_storage_table_entity.this | resource |
+| azurerm_management_lock.this | resource |
+| azurerm_storage_account.this | resource |
+| azurerm_storage_account_local_user.this | resource |
+| azurerm_storage_account_network_rules.this | resource |
+| azurerm_storage_blob.this | resource |
+| azurerm_storage_blob_inventory_policy.this | resource |
+| azurerm_storage_container.this | resource |
+| azurerm_storage_data_lake_gen2_filesystem.this | resource |
+| azurerm_storage_data_lake_gen2_path.this | resource |
+| azurerm_storage_management_policy.this | resource |
+| azurerm_storage_queue.this | resource |
+| azurerm_storage_share.this | resource |
+| azurerm_storage_share_directory.this | resource |
+| azurerm_storage_share_file.this | resource |
+| azurerm_storage_table.this | resource |
+| azurerm_storage_table_entity.this | resource |
 | [random_id.random_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
-| hcaazurerm3_azurerm_resource_group.rgrp | data source |
+| azurerm_resource_group.rgrp | data source |
 
 ## Inputs
 
@@ -542,7 +538,7 @@ No modules.
 | <a name="input_management_locks"></a> [management\_locks](#input\_management\_locks) | A map of management locks<br>- `CanNotDelete` - (Required) Storage Account level CanNotDelete Management Lock. Authorized users are able to read and modify the resources, but not delete. Defaults to `true`. Changing this forces a new resource to be created.<br>- `ReadyOnly` - (Optional) Storage Account level ReadOnly Management Lock. Authorized users can only read from a resource, but they can't modify or delete. Defaults to `false`. Changing this forces a new resource to be created. | <pre>object({<br>    CanNotDelete = bool<br>    ReadOnly     = optional(bool)<br>  })</pre> | <pre>{<br>  "CanNotDelete": true,<br>  "ReadOnly": false<br>}</pre> | no |
 | <a name="input_management_policy"></a> [management\_policy](#input\_management\_policy) | `rule` block supports the following:<br> - `name` - (Required) The name of the rule. Rule name is case-sensitive. It must be unique within a policy.<br> - `enabled` - (Required) Boolean to specify whether the rule is enabled.<br> - `filters` - (Required) A filters block as documented below.<br> - `actions` - (Required) An actions block as documented below.<br><br> ---<br> `filters` block supports the following:<br> - `blob_types` - (Required) An array of predefined values. Valid options are `blockBlob` and `appendBlob`.<br> - `prefix_match` - (Optional) An array of strings for prefixes to be matched.<br> - `match_blob_index_tag` - (Optional) A match\_blob\_index\_tag object as defined below. The object defines the blob index tag based filtering for blob objects.<br> Note: The `match_blob_index_tag` block cannot be set if the snapshot and/or version blocks are set.<br><br>---<br>`match_blob_index_tag` block supports the following<br>- `name` - (Required) The filter tag name used for tag based filtering for blob objects.<br>- `operation` - (Optional) The comparison operator which is used for object comparison and filtering. Possible value is ==. Defaults to ==.<br>- `value` - (Required) The filter tag value used for tag based filtering for blob objects.<br><br> ---<br> `actions` block supports the following:<br> - `base_blob` - (Optional) A base\_blob block as documented below.<br> - `snapshot` - (Optional) A snapshot block as documented below.<br> - `version` - (Optional) A version block as documented below.<br><br> ---<br> `base_blob` block supports the following:<br> - `tier_to_cool_after_days_since_modification_greater_than` - (Optional) The age in days after last modification to tier blobs to cool storage. Supports blob currently at Hot tier. Must be between 0 and 99999. Defaults to -1.<br> - `tier_to_cool_after_days_since_last_access_time_greater_than` - (Optional) The age in days after last access time to tier blobs to cool storage. Supports blob currently at Hot tier. Must be between 0 and 99999. Defaults to -1.<br> - `tier_to_cool_after_days_since_creation_greater_than` - (Optional) The age in days after creation to cool storage. Supports blob currently at Hot tier. Must be between 0 and 99999. Defaults to -1.<br> Note: The `tier_to_cool_after_days_since_modification_greater_than`, `tier_to_cool_after_days_since_last_access_time_greater_than`, and `tier_to_cool_after_days_since_creation_greater_than` can not be set at the same time.<br><br> - `auto_tier_to_hot_from_cool_enabled` - (Optional) Whether a blob should automatically be tiered from cool back to hot if it's accessed again after being tiered to cool. Defaults to false.<br> Note: The `auto_tier_to_hot_from_cool_enabled` must be used together with `tier_to_cool_after_days_since_last_access_time_greater_than`.<br><br> - `tier_to_archive_after_days_since_modification_greater_than` - (Optional) The age in days after last modification to tier blobs to archive storage. Supports blob currently at Hot or Cool tier. Must be between 0 and 99999. Defaults to -1.<br> - `tier_to_archive_after_days_since_last_access_time_greater_than` - (Optional) The age in days after last access time to tier blobs to archive storage. Supports blob currently at Hot or Cool tier. Must be between 0 and 99999. Defaults to -1.<br> Note: The `tier_to_archive_after_days_since_modification_greater_than`, `tier_to_archive_after_days_since_last_access_time_greater_than`, and `tier_to_archive_after_days_since_creation_greater_than` can not be set at the same time.<br><br> - `tier_to_archive_after_days_since_last_tier_change_greater_than` - (Optional) The age in days after last tier change to the blobs to skip to be archived. Must be between 0 and 99999. Defaults to -1.<br> Note: The `tier_to_cool_after_days_since_modification_greater_than`, `tier_to_cool_after_days_since_last_access_time_greater_than`, and `tier_to_cool_after_days_since_creation_greater_than` can not be set at the same time.<br><br> - `delete_after_days_since_modification_greater_than` - (Optional) The age in days after last modification to delete the blob. Must be between 0 and 99999. Defaults to -1.<br> - `delete_after_days_since_last_access_time_greater_than` - (Optional) The age in days after last access time to delete the blob. Must be between 0 and 99999. Defaults to -1.<br> - `delete_after_days_since_creation_greater_than` - (Optional) The age in days after creation to delete the blob. Must be between 0 and 99999. Defaults to -1.<br> Note: The `delete_after_days_since_modification_greater_than`, `delete_after_days_since_last_access_time_greater_than`, and `delete_after_days_since_creation_greater_than` can not be set at the same time.<br> Note: The `last_access_time_enabled` must be set to true in the `azurerm_storage_account` in order to use `tier_to_cool_after_days_since_last_access_time_greater_than`, `tier_to_archive_after_days_since_last_access_time_greater_than`, and `delete_after_days_since_last_access_time_greater_than`.<br><br> ---<br> `snapshot` block supports the following:<br> - `change_tier_to_archive_after_days_since_creation` - (Optional) The age in days after creation to tier blob snapshot to archive storage. Must be between 0 and 99999. Defaults to -1.<br> - `tier_to_archive_after_days_since_last_tier_change_greater_than` - (Optional) The age in days after last tier change to the blobs to skip to be archived. Must be between 0 and 99999. Defaults to -1.<br> - `change_tier_to_cool_after_days_since_creation` - (Optional) The age in days after creation to tier blob snapshot to cool storage. Must be between 0 and 99999. Defaults to -1.<br> - `delete_after_days_since_creation`- (Optional) The age in days after creation to delete the blob version. Must be between 0 and 99999. Defaults to -1.<br><br> ---<br> `timeouts` block supports the following:<br> - `create` - (Defaults to 60 minutes) Used when creating the  Network Rules for this Storage Account.<br> - `delete` - (Defaults to 60 minutes) Used when deleting the Network Rules for this Storage Account.<br> - `read` - (Defaults to 5 minutes) Used when retrieving the Network Rules for this Storage Account.<br> - `update` - (Defaults to 60 minutes) Used when updating the Network Rules for this Storage Account. | <pre>object({<br>    rule = optional(list(object({<br>      name    = string<br>      enabled = bool<br>      filters = object({<br>        blob_types   = list(string)<br>        prefix_match = optional(list(string))<br>        match_blob_index_tag = optional(object({<br>          name      = string<br>          operation = optional(string, "==")<br>          value     = string<br>        }))<br>      })<br>      actions = object({<br>        base_blob = optional(object({<br>          tier_to_cool_after_days_since_modification_greater_than        = optional(number)<br>          tier_to_cool_after_days_since_last_access_time_greater_than    = optional(number)<br>          tier_to_cool_after_days_since_creation_greater_than            = optional(number)<br>          auto_tier_to_hot_from_cool_enabled                             = optional(bool)<br>          tier_to_archive_after_days_since_modification_greater_than     = optional(number)<br>          tier_to_archive_after_days_since_last_access_time_greater_than = optional(number)<br>          tier_to_archive_after_days_since_creation_greater_than         = optional(number)<br>          tier_to_archive_after_days_since_last_tier_change_greater_than = optional(number)<br>          delete_after_days_since_modification_greater_than              = optional(number)<br>          delete_after_days_since_last_access_time_greater_than          = optional(number)<br>          delete_after_days_since_creation_greater_than                  = optional(number)<br>        }))<br>        snapshot = optional(object({<br>          change_tier_to_archive_after_days_since_creation               = optional(number)<br>          tier_to_archive_after_days_since_last_tier_change_greater_than = optional(number)<br>          change_tier_to_cool_after_days_since_creation                  = optional(number)<br>          delete_after_days_since_creation_greater_than                  = optional(number)<br>        }))<br>        version = optional(object({<br>          change_tier_to_archive_after_days_since_creation               = optional(number)<br>          tier_to_archive_after_days_since_last_tier_change_greater_than = optional(number)<br>          change_tier_to_cool_after_days_since_creation                  = optional(number)<br>          delete_after_days_since_creation                               = optional(number)<br>        }))<br>      })<br>    })))<br>    timeouts = optional(object({<br>      create = optional(string)<br>      delete = optional(string)<br>      read   = optional(string)<br>      update = optional(string)<br>    }))<br>  })</pre> | `null` | no |
 | <a name="input_min_tls_version"></a> [min\_tls\_version](#input\_min\_tls\_version) | (Optional) The minimum supported TLS version for the storage account. Defaults to `TLS1_2` for new storage accounts. | `string` | `"TLS1_2"` | no |
-| <a name="input_network_rules"></a> [network\_rules](#input\_network\_rules) | - `hca_ip_enabled` - (Optional) Enables HCA Terraform Cloud <region 1> US and <region 2> US networks access to deployed resources. Setting to `false` is NOT recommend, but there may be specific use cases. Defaults to `true`.<br>- `bypass` - (Optional) Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Valid options are any combination of `Logging`, `Metrics`, `AzureServices`, or `None`.<br>- `ip_rules` - (Optional) List of public IP or IP ranges in CIDR Format. Only IPv4 addresses are allowed. Private IP address ranges (as defined in [RFC 1918](https://tools.ietf.org/html/rfc1918#section-3)) are not allowed.<br>- `storage_account_id` - (Required) Specifies the ID of the storage account. Changing this forces a new resource to be created.<br>- `virtual_network_subnet_ids` - (Optional) A list of virtual network subnet ids to secure the storage account.<br>- `subnet_id` - (Required) The ID of the Subnet from which Private IP Addresses will be allocated for this Private Endpoint. Changing this forces a new resource to be created.<br><br>---<br>`private_link_access` block supports the following:<br>- `endpoint_resource_id` - (Required) The resource id of the resource access rule to be granted access.<br>- `endpoint_tenant_id` - (Optional) The tenant id of the resource of the resource access rule to be granted access. Defaults to the current tenant id.<br><br>---<br>`timeouts` block supports the following:<br>- `create` - (Defaults to 60 minutes) Used when creating the  Network Rules for this Storage Account.<br>- `delete` - (Defaults to 60 minutes) Used when deleting the Network Rules for this Storage Account.<br>- `read` - (Defaults to 5 minutes) Used when retrieving the Network Rules for this Storage Account.<br>- `update` - (Defaults to 60 minutes) Used when updating the Network Rules for this Storage Account. | <pre>object({<br>    hca_ips_enabled            = optional(bool, true)<br>    bypass                     = optional(set(string), ["Logging", "Metrics", "AzureServices"])<br>    ip_rules                   = optional(list(string), [])<br>    virtual_network_subnet_ids = optional(set(string))<br>    private_link_access = optional(list(object({<br>      endpoint_resource_id = string<br>      endpoint_tenant_id   = optional(string)<br>    })))<br>    timeouts = optional(object({<br>      create = optional(string)<br>      delete = optional(string)<br>      read   = optional(string)<br>      update = optional(string)<br>    }))<br>  })</pre> | `{}` | no |
+| <a name="input_network_rules"></a> [network\_rules](#input\_network\_rules) | - `bypass` - (Optional) Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Valid options are any combination of `Logging`, `Metrics`, `AzureServices`, or `None`.<br>- `ip_rules` - (Optional) List of public IP or IP ranges in CIDR Format. Only IPv4 addresses are allowed. Private IP address ranges (as defined in [RFC 1918](https://tools.ietf.org/html/rfc1918#section-3)) are not allowed.<br>- `storage_account_id` - (Required) Specifies the ID of the storage account. Changing this forces a new resource to be created.<br>- `virtual_network_subnet_ids` - (Optional) A list of virtual network subnet ids to secure the storage account.<br>- `subnet_id` - (Required) The ID of the Subnet from which Private IP Addresses will be allocated for this Private Endpoint. Changing this forces a new resource to be created.<br><br>---<br>`private_link_access` block supports the following:<br>- `endpoint_resource_id` - (Required) The resource id of the resource access rule to be granted access.<br>- `endpoint_tenant_id` - (Optional) The tenant id of the resource of the resource access rule to be granted access. Defaults to the current tenant id.<br><br>---<br>`timeouts` block supports the following:<br>- `create` - (Defaults to 60 minutes) Used when creating the  Network Rules for this Storage Account.<br>- `delete` - (Defaults to 60 minutes) Used when deleting the Network Rules for this Storage Account.<br>- `read` - (Defaults to 5 minutes) Used when retrieving the Network Rules for this Storage Account.<br>- `update` - (Defaults to 60 minutes) Used when updating the Network Rules for this Storage Account. | <pre>object({<br>    bypass                     = optional(set(string), ["Logging", "Metrics", "AzureServices"])<br>    ip_rules                   = optional(list(string), [])<br>    virtual_network_subnet_ids = optional(set(string))<br>    private_link_access = optional(list(object({<br>      endpoint_resource_id = string<br>      endpoint_tenant_id   = optional(string)<br>    })))<br>    timeouts = optional(object({<br>      create = optional(string)<br>      delete = optional(string)<br>      read   = optional(string)<br>      update = optional(string)<br>    }))<br>  })</pre> | `{}` | no |
 | <a name="input_nfsv3_enabled"></a> [nfsv3\_enabled](#input\_nfsv3\_enabled) | (Optional) Is NFSv3 protocol enabled? Changing this forces a new resource to be created. Defaults to `false`. | `bool` | `false` | no |
 | <a name="input_private_dns_zones_for_private_link"></a> [private\_dns\_zones\_for\_private\_link](#input\_private\_dns\_zones\_for\_private\_link) | A map of private dns zones that used to create corresponding a records and cname records for the private endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.<br>- `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.<br>- `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `privatelink.blob.core.windows.net`. Changing this forces a new resource to be created.<br>- `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link. | <pre>map(object({<br>    resource_group_name       = string<br>    name                      = string<br>    virtual_network_link_name = string<br>  }))</pre> | `{}` | no |
 | <a name="input_private_dns_zones_for_public_endpoint"></a> [private\_dns\_zones\_for\_public\_endpoint](#input\_private\_dns\_zones\_for\_public\_endpoint) | A map of private dns zones that used to create corresponding a records and cname records for the public endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.<br>- `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.<br>- `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `blob.core.windows.net`. Changing this forces a new resource to be created.<br>- `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link. | <pre>map(object({<br>    resource_group_name       = string<br>    name                      = string<br>    virtual_network_link_name = string<br>  }))</pre> | `{}` | no |

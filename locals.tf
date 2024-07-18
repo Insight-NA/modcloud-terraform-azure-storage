@@ -2,9 +2,7 @@
 # Local Declarations
 #-------------------------------
 locals {
-
-  generated_storage_name = substr(format("st%s%s%s%s", local.app_code, local.app_environment, local.app_instance, random_id.random_suffix.hex), 0, 24)
-  storage_name           = var.storage_account_name != null ? var.storage_account_name : local.generated_storage_name
+  storage_name = var.storage_account_name
   access_tier = (
     var.account_kind == "BlobStorage" ||
     var.account_kind == "StorageV2" ||
@@ -22,43 +20,6 @@ locals {
     local.table_endpoint,
     local.dfs_endpoint
   ))
-
-  # networking
-  allowed_ips = distinct(concat(
-    var.network_rules.hca_ips_enabled == true ? local.hca_ips : [],
-  try(var.network_rules.ip_rules, []) != null ? try(var.network_rules.ip_rules, []) : [], []))
-  allowed_subnets = distinct(concat(
-    var.network_rules.hca_ips_enabled == true ? [
-      local.tfc_agent_east_subnet_id,
-      local.tfc_agent_central_subnet_id
-    ] : [],
-    var.network_rules.virtual_network_subnet_ids != null ? tolist(var.network_rules.virtual_network_subnet_ids) : [],
-  []))
-  hca_ips                     = ["internal_ip_range1", "internal_ip_range2", "internal_ip_range3"]
-  tfc_agent_east_subnet_id    = "/subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<snet>"
-  tfc_agent_central_subnet_id = "/subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<snet>"
-
-  # tags
-  app_code        = var.tags != null ? lower(replace(var.tags["app_code"], "/[[:^alnum:]]/", "")) : ""
-  app_environment = var.tags != null ? lower(replace(var.tags["app_environment"], "/[[:^alnum:]]/", "")) : ""
-  app_instance    = var.tags != null ? lower(replace(var.tags["app_instance"], "/[[:^alnum:]]/", "")) : ""
-
-  # Blob Properties
-  blob_properties_defaults = {
-    versioning_enabled = true
-    container_delete_retention_policy = {
-      days = 7
-    }
-    delete_retention_policy = {
-      days = 7
-    }
-    cors_rule                     = null
-    restore_policy                = null
-    last_access_time_enabled      = null
-    change_feed_retention_in_days = null
-    change_feed_enabled           = null
-    default_service_version       = null
-  }
 
   # Blob Creation
   blob = flatten([
@@ -83,20 +44,6 @@ locals {
       }
     ]
   ])
-
-  # Share Properties
-  share_properties_defaults = {
-    retention_policy = {
-      days = 7
-    }
-    cors_rule = null
-    smb       = null
-  }
-
-  share_properties = (
-    var.account_kind == "BlockBlobStorage" ? null :
-    var.share_properties != null ? var.share_properties : local.share_properties_defaults
-  )
 
   # Share Directory Creation
   directories = flatten([

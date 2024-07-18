@@ -13,38 +13,33 @@ virtual_network_subnet_ids accepts a list of resource ids for subnets. Ideally, 
 /subscriptions/{subscriptionID}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetID}
 ```
 
-WARNING: The hca_ips_enabled boolean attribute is 'true' by default, and should only be modified in extremely specific use cases. The hca_ips_enabled boolean attribute adds a network rule enabling the HCA Terraform Cloud Agent East 2 US and Central US networks access to resources deployed by terraform; additionally IP address ranges for VPN users is added. Setting this attribute to false may prevent terraform from fully deploying all requested resources and it WILL BE UNABLE to modify any resources once deployed (403 Authorization Failure error).
+WARNING: If leveraging Terraform Cloud, you may need to add the terraform cloud agents subnet id's, e.g., /subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<snet> to the network_rules virtual_network_subnet_ids. Failure to do so may result in resources being deployed, but subsequent attempts to modify resources may produce a 403 Authorization Failure error.
 
 ```hcl
+locals {
+  tags = {
+    env            = "prod"
+    app_code       = "tst"
+    app_instance   = "tbd"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+  }
+}
+
 data "azurerm_subnet" "test_sub" {
-  provider             = hcaazurerm3
   name                 = "default"
   virtual_network_name = "module-testing-vnet"
   resource_group_name  = var.resource_group_name
 }
 
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
-
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
-}
-
 module "azure_storage_account_network_rules" {
-  source                     = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                    = "~>4.2.0"
-  tags                = module.tagging.labels
+  source              = "../../"
+  tags                = local.tags
   resource_group_name = var.resource_group_name
   network_rules = {
-    ip_rules = ["127.0.0.1", "127.0.113.0/24"]
+    ip_rules                   = ["127.0.0.1", "127.0.113.0/24"]
     virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
   }
 }

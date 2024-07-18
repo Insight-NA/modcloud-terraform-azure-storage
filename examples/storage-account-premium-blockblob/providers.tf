@@ -1,8 +1,8 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~>1.3"
   required_providers {
-    hcaazurerm3 = {
-      source  = "app.terraform.io/hca-healthcare/hcaazurerm3"
+    azurerm = {
+      source  = "registry.terraform.io/hashicorp/azurerm"
       version = "~>3.95"
     }
   }
@@ -14,6 +14,6 @@ terraform {
 # Azure Configuration
 #---------------------------------------------------------------------------------------------
 
-provider "hcaazurerm3" {
+provider "azurerm" {
   features {}
 }
