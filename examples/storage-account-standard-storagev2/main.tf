@@ -21,10 +21,10 @@ locals {
 }
 
 module "azure_storage_account_standard_storagev2" {
-  source              = "../../"
-  tags                = local.tags
+  source               = "../../"
+  tags                 = local.tags
   storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
-  resource_group_name = var.resource_group_name
+  resource_group_name  = var.resource_group_name
 
   management_locks = {
     CanNotDelete = false
@@ -32,7 +32,7 @@ module "azure_storage_account_standard_storagev2" {
   }
 
   network_rules = {
-    default_action = "Allow"
+    default_action             = "Allow"
     virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
   }
 

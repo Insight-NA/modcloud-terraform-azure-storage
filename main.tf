@@ -560,10 +560,9 @@ resource "azurerm_storage_share_directory" "this" {
     for directories in local.directories : "${directories.share_key}.${directories.directories_key}" => directories
   }
 
-  name                 = each.value.directories_name
-  share_name           = each.value.share_name
-  storage_account_name = azurerm_storage_account.this.name
-  metadata             = each.value.metadata
+  name             = each.value.directories_name
+  storage_share_id = azurerm_storage_share.this[each.value.share_name].id
+  metadata         = each.value.metadata
 
   dynamic "timeouts" {
     for_each = each.value.timeouts == null ? [] : [each.value.timeouts]
@@ -666,11 +665,10 @@ resource "azurerm_storage_table_entity" "this" {
     for entity in local.entities : "${entity.table_key}.${entity.entity_key}" => entity
   }
 
-  storage_account_name = azurerm_storage_account.this.name
-  table_name           = each.value.table_name
-  partition_key        = each.value.partition_key
-  row_key              = each.value.row_key
-  entity               = each.value.entity
+  storage_table_id = azurerm_storage_table.this[each.value.table_name].id
+  partition_key    = each.value.partition_key
+  row_key          = each.value.row_key
+  entity           = each.value.entity
 
   depends_on = [azurerm_storage_table.this]
 }
