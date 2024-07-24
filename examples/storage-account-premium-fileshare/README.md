@@ -23,10 +23,14 @@ locals {
   }
 }
 
+resource "random_id" "random_suffix" {
+  byte_length = 8
+}
+
 module "azure_storage_fileshare_premium" {
-  source                   = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                  = "~>4.2.0"
-  tags                = local.tags
+  source                   = "../../"
+  tags                     = local.tags
+  storage_account_name     = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
   resource_group_name      = var.resource_group_name
   account_kind             = "FileStorage"
   account_replication_type = "ZRS"
@@ -76,28 +80,30 @@ module "azure_storage_fileshare_premium" {
           ]
         }
       ]
-
-      share_properties = {
-        cors_rule = {
-          allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
-          allowed_methods    = ["PUT", "GET"]
-          allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
-          exposed_headers    = "x-ms-meta-*"
-          max_age_in_seconds = 200
-        }
-        retention_policy = {
-          days = 8
-        }
-        smb = {
-          versions                        = "SMB3.1.1"
-          authentication_types            = "Kerberos"
-          kerberos_ticket_encryption_type = "AES-256"
-          channel_encryption_type         = "AES-256-GCM"
-          multichannel_enabled            = true
-        }
-      }
     }
   ]
+
+  share_properties = {
+    cors_rule = [
+      {
+        allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
+        allowed_methods    = ["PUT", "GET"]
+        allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
+        exposed_headers    = ["x-ms-meta-*"]
+        max_age_in_seconds = 200
+      }
+    ]
+    retention_policy = {
+      days = 8
+    }
+    smb = {
+      versions                        = ["SMB3.1.1"]
+      authentication_types            = ["Kerberos"]
+      kerberos_ticket_encryption_type = ["AES-256"]
+      channel_encryption_type         = ["AES-256-GCM"]
+      multichannel_enabled            = true
+    }
+  }
 }
 ```
 

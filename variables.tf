@@ -184,6 +184,12 @@ EOT
   nullable    = true
 }
 
+variable "cross_tenant_replication_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Should cross Tenant replication be enabled? Defaults to false."
+}
+
 variable "custom_domain" {
   type = object({
     name          = string
@@ -259,10 +265,13 @@ The `timeouts` block supports the following:
   EOT
 }
 
-variable "cross_tenant_replication_enabled" {
-  type        = bool
-  default     = false
-  description = "(Optional) Should cross Tenant replication be enabled? Defaults to false."
+variable "dns_zone_ids" {
+  description = "A Map of DNS zone ids from the private DNS zones module, dns_zone name is the key"
+  type = map(object({
+    name = string
+    id   = string
+  }))
+  default = {}
 }
 
 variable "default_to_oauth_authentication" {
@@ -281,6 +290,12 @@ variable "edge_zone" {
   type        = string
   default     = null
   description = "(Optional) Specifies the Edge Zone within the Azure Region where this Storage Account should exist. Changing this forces a new Storage Account to be created."
+}
+
+variable "enable_private_networking" {
+  description = "Declare whether Private Networking should be leveraged (VNet integration and Private Endpoints)."
+  type        = bool
+  default     = false
 }
 
 variable "identity" {
@@ -516,6 +531,18 @@ variable "nfsv3_enabled" {
   type        = bool
   default     = false
   description = "(Optional) Is NFSv3 protocol enabled? Changing this forces a new resource to be created. Defaults to `false`."
+}
+
+variable "pe_resource_group_name" {
+  description = "The name of the resource group where the private endpoint resources will be deployed."
+  type        = string
+  default     = ""
+}
+
+variable "private_endpoint_subnet_id" {
+  description = "The ID of the subnet for the Private Endpoint."
+  type        = string
+  default     = null
 }
 
 variable "private_dns_zones_for_private_link" {

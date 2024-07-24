@@ -20,19 +20,23 @@ locals {
   }
 }
 
-module "azure_storage_queue" {
-  source                  = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                 = "~>4.2.0"
+resource "random_id" "random_suffix" {
+  byte_length = 8
+}
 
-  tags                = local.tags
-  resource_group_name      = var.resource_group_name
+module "azure_storage_queue" {
+  source = "../../"
+
+  tags                 = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
+  resource_group_name  = var.resource_group_name
 
   storage_queue = [
-    { 
+    {
       name = "queue-first"
       metadata = {
-        testkey = "testvalue"
-        queuetype = module.azure_storage_queue.storage_account_tier
+        testkey        = "testvalue"
+        queuetype      = module.azure_storage_queue.storage_account_tier
         classification = module.tagging.labels.classification
       }
     },
@@ -40,15 +44,14 @@ module "azure_storage_queue" {
       name = "queue-second"
     }
   ]
-
   queue_properties = {
     cors_rule = [{
-        allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
-        allowed_methods    = ["PUT", "GET"]
-        allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
-        exposed_headers    = ["x-ms-meta-*"]
-        max_age_in_seconds = 200
-      }]
+      allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
+      allowed_methods    = ["PUT", "GET"]
+      allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
+      exposed_headers    = ["x-ms-meta-*"]
+      max_age_in_seconds = 200
+    }]
     logging = {
       delete                = true
       read                  = true

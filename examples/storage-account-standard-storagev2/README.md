@@ -5,10 +5,13 @@
 
 ```hcl
 data "azurerm_subnet" "test_sub" {
-  
   name                 = "default"
   virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
+}
+
+resource "random_id" "random_suffix" {
+  byte_length = 8
 }
 
 locals {
@@ -24,17 +27,21 @@ locals {
 }
 
 module "azure_storage_account_standard_storagev2" {
-  source                  = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                 = "~>4.2.0"
-  tags                = local.tags
-  resource_group_name = var.resource_group_name
+  source               = "../../"
+  tags                 = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
+  resource_group_name  = var.resource_group_name
 
   management_locks = {
-    CanNotDelete = true
+    CanNotDelete = false
     ReadOnly     = false
   }
 
   network_rules = {
+    default_action = "Deny"
+    # This could be a specific ip address for individual users, e.g., 20.94.5.238
+    # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
+    ip_rules                   = ["20.94.5.238"]
     virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
   }
 
@@ -192,7 +199,7 @@ module "azure_storage_account_standard_storagev2" {
       metadata = {
         testkey        = "testvalue"
         queuetype      = module.azure_storage_account_standard_storagev2.storage_account_tier
-        classification = module.tagging.labels.classification
+        classification = local.tags.classification
       }
     },
     {

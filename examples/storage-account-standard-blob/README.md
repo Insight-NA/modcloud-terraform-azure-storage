@@ -21,10 +21,14 @@ locals {
   }
 }
 
+resource "random_id" "random_suffix" {
+  byte_length = 8
+}
+
 module "azure_storage_standard_blob" {
-  source                  = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                 = "~>4.2.0"
-  tags                = local.tags
+  source                   = "../../"
+  tags                     = local.tags
+  storage_account_name     = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
   resource_group_name      = var.resource_group_name
   account_replication_type = "LRS"
 
@@ -42,7 +46,7 @@ module "azure_storage_standard_blob" {
       }]
     },
     {
-      name = "container-block-page-combo"
+      name = "container-block"
       blob = [
         {
           name           = "blob_block_first"
@@ -53,17 +57,8 @@ module "azure_storage_standard_blob" {
             blob_type = "block"
             purpose   = "backups"
           }
-        },
-        {
-          name        = "blob_page"
-          type        = "Page"
-          source      = "./page_blob_source.txt"
-          parallelism = 8
-          metadata = {
-            blob_type = "page"
-            purpose   = "database_files"
-          }
-      }]
+        }
+      ]
     }
   ]
 
@@ -126,7 +121,7 @@ module "azure_storage_standard_blob" {
     },
     {
       name                   = "blob-inventory-policy-rule-blob-2"
-      storage_container_name = "container-block-page-combo"
+      storage_container_name = "container-block"
       format                 = "Csv"
       schedule               = "Daily"
       scope                  = "Blob"
@@ -147,7 +142,7 @@ module "azure_storage_standard_blob" {
         name    = "firstrule"
         enabled = true
         filters = {
-          prefix_match = ["container-block-page-combo/blob_block"]
+          prefix_match = ["container-block/blob_block"]
           blob_types   = ["blockBlob"]
           match_blob_index_tag = {
             name      = "tag1"

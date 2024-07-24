@@ -3,6 +3,7 @@
 #-------------------------------
 locals {
   storage_name = var.storage_account_name
+  location     = var.storage_account_location != null ? var.storage_account_location : data.azurerm_resource_group.rgrp.location
   access_tier = (
     var.account_kind == "BlobStorage" ||
     var.account_kind == "StorageV2" ||
