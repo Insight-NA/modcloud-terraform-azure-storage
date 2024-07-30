@@ -58,9 +58,12 @@ resource "azurerm_storage_table_entity" "this" {
   }
 
   storage_table_id = azurerm_storage_table.this[each.value.table_name].id
-  partition_key    = each.value.partition_key
-  row_key          = each.value.row_key
-  entity           = each.value.entity
+  # TODO Delete
+  #storage_account_name = azurerm_storage_account.this.name
+  #table_name           = each.value.table_name
+  partition_key = each.value.partition_key
+  row_key       = each.value.row_key
+  entity        = each.value.entity
 
   depends_on = [azurerm_storage_table.this]
 }

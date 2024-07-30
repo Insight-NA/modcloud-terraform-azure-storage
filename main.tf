@@ -54,7 +54,8 @@ resource "azurerm_storage_account" "this" {
     }
   }
   dynamic "blob_properties" {
-    for_each = var.account_kind == "FileStorage" ? [] : [var.blob_properties]
+    for_each = var.account_kind == "FileStorage" ? [] : (
+    var.blob_properties != null ? [var.blob_properties] : [])
 
     content {
       change_feed_enabled           = blob_properties.value.change_feed_enabled
@@ -180,7 +181,9 @@ resource "azurerm_storage_account" "this" {
     }
   }
   dynamic "share_properties" {
-    for_each = var.account_kind == "BlockBlobStorage" ? [] : [var.share_properties]
+    for_each = var.account_kind == "BlockBlobStorage" ? [] : (
+    var.share_properties != null ? [var.share_properties] : [])
+
     content {
       dynamic "cors_rule" {
         for_each = share_properties.value.cors_rule == null ? [] : share_properties.value.cors_rule

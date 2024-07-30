@@ -312,8 +312,8 @@ EOT
 
 variable "infrastructure_encryption_enabled" {
   type        = bool
-  default     = true
-  description = "(Optional) Is infrastructure encryption enabled? Changing this forces a new resource to be created. Defaults to true."
+  default     = false
+  description = "(Optional) Is infrastructure encryption enabled? Changing this forces a new resource to be created. Defaults to false."
 }
 
 variable "immutability_policy" {
@@ -533,7 +533,7 @@ variable "nfsv3_enabled" {
   description = "(Optional) Is NFSv3 protocol enabled? Changing this forces a new resource to be created. Defaults to `false`."
 }
 
-variable "pe_resource_group_name" {
+variable "private_endpoint_resource_group_name" {
   description = "The name of the resource group where the private endpoint resources will be deployed."
   type        = string
   default     = ""
@@ -545,55 +545,9 @@ variable "private_endpoint_subnet_id" {
   default     = null
 }
 
-variable "private_dns_zones_for_private_link" {
-  type = map(object({
-    resource_group_name       = string
-    name                      = string
-    virtual_network_link_name = string
-  }))
-  default     = {}
-  description = <<-EOT
-  A map of private dns zones that used to create corresponding a records and cname records for the private endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.
-  - `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.
-  - `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `privatelink.blob.core.windows.net`. Changing this forces a new resource to be created.
-  - `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link.
-EOT
-  nullable    = false
-
-  validation {
-    condition = alltrue([
-      for n, z in var.private_dns_zones_for_private_link : contains(["blob", "table", "queue", "share"], n)
-    ])
-    error_message = "The map's key must be one of `blob`, `table`, `queue`, `share`."
-  }
-}
-
-variable "private_dns_zones_for_public_endpoint" {
-  type = map(object({
-    resource_group_name       = string
-    name                      = string
-    virtual_network_link_name = string
-  }))
-  default     = {}
-  description = <<-EOT
-  A map of private dns zones that used to create corresponding a records and cname records for the public endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.
-  - `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.
-  - `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `blob.core.windows.net`. Changing this forces a new resource to be created.
-  - `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link.
-EOT
-  nullable    = false
-
-  validation {
-    condition = alltrue([
-      for n, z in var.private_dns_zones_for_public_endpoint : contains(["table", "queue"], n)
-    ])
-    error_message = "The map's key must be one of `table`, `queue`."
-  }
-}
-
 variable "public_network_access_enabled" {
   type        = bool
-  default     = true
+  default     = false
   description = "(Optional) Whether the public network access is enabled? Defaults to `true`."
 }
 

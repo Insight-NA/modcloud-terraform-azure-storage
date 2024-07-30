@@ -68,7 +68,10 @@ resource "azurerm_storage_share_directory" "this" {
 
   name             = each.value.directories_name
   storage_share_id = azurerm_storage_share.this[each.value.share_name].id
-  metadata         = each.value.metadata
+  # TODO Delete
+  #share_name           = each.value.share_name
+  #storage_account_name = azurerm_storage_account.this.name
+  metadata = each.value.metadata
 
   dynamic "timeouts" {
     for_each = each.value.timeouts == null ? [] : [each.value.timeouts]

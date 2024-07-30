@@ -3,7 +3,7 @@ resource "azurerm_private_endpoint" "blob" {
 
   name                = format("pe-%s-%s", "blob", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {
@@ -24,7 +24,7 @@ resource "azurerm_private_endpoint" "table" {
 
   name                = format("pe-%s-%s", "table", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {
@@ -45,7 +45,7 @@ resource "azurerm_private_endpoint" "queue" {
 
   name                = format("pe-%s-%s", "queue", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {
@@ -66,7 +66,7 @@ resource "azurerm_private_endpoint" "file" {
 
   name                = format("pe-%s-%s", "file", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {
@@ -87,7 +87,7 @@ resource "azurerm_private_endpoint" "web" {
 
   name                = format("pe-%s-%s", "web", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {
@@ -108,7 +108,7 @@ resource "azurerm_private_endpoint" "dfs" {
 
   name                = format("pe-%s-%s", "dfs", local.storage_name)
   location            = local.location
-  resource_group_name = coalesce(var.pe_resource_group_name, var.resource_group_name)
+  resource_group_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
   subnet_id           = var.private_endpoint_subnet_id
 
   private_service_connection {

@@ -4,6 +4,26 @@
 ## How to Use this Module
 
 ```hcl
+locals {
+  tags = {
+    env            = "dev"
+    app_code       = "storage"
+    app_instance   = "storagev2"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+    org_code       = "insight"
+    managed_by      = "terraform"
+  }
+
+  tfc_ip_ranges = [
+    "52.86.200.106", "52.86.201.227", "52.70.186.109",
+    "44.236.246.186", "54.185.161.84", "44.238.78.236",
+    "75.2.98.97", "99.83.150.238"
+  ]
+}
+
 data "azurerm_subnet" "test_sub" {
   name                 = "default"
   virtual_network_name = var.virtual_network_name
@@ -12,18 +32,6 @@ data "azurerm_subnet" "test_sub" {
 
 resource "random_id" "random_suffix" {
   byte_length = 8
-}
-
-locals {
-  tags = {
-    env            = "prod"
-    app_code       = "tst"
-    app_instance   = "tbd"
-    classification = "internal-only"
-    cost_id        = "12345"
-    department_id  = "678901"
-    project_id     = "it-ab00c123"
-  }
 }
 
 module "azure_storage_account_standard_storagev2" {
@@ -41,7 +49,7 @@ module "azure_storage_account_standard_storagev2" {
     default_action = "Deny"
     # This could be a specific ip address for individual users, e.g., 20.94.5.238
     # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
-    ip_rules                   = ["20.94.5.238"]
+    ip_rules                   = concat(local.tfc_ip_ranges, ["20.94.5.238"])
     virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
   }
 
