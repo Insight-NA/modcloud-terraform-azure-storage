@@ -98,9 +98,11 @@ Microsoft-managed failovers are at the region or scale unit level, and can't be 
 ## Security Requirments / Considerations
 
 ### Public Network Access
-public_network_access_enabled variable can be set to false. Using the network_rules variables, ip_rules can be set to allow access for public ip addresses and ip address ranges, e.g., specific single client, range of VPN users, on-premises networks. Additionally, virtual_network_subnet_ids can specifiy virtual network subnets, allowing access for resources there. Exceptions for access can be allowed for Logging, Metrics, and Azure Services, using the bypass parameter.
+ If public_network_access_enabled variable is set to true (which is default), then using the network_rules variables, ip_rules can be set to allow access for public ip addresses and ip address ranges, e.g., specific single client, range of VPN users, on-premises networks. Additionally, virtual_network_subnet_ids can specifiy virtual network subnets, allowing access for resources there. Exceptions for access can be allowed for Logging, Metrics, and Azure Services, using the bypass parameter.
 
-If leveraging HCP Terraform (formerly Terraform Cloud), and internally owned runners are not being used, then the relevant workspace will need be in local mode, and the user's IP address added to the network_rules ip_rules parameter.
+ If public_network_access_enabled variable is set to false, then network_rules has no effect.
+
+If leveraging HCP Terraform (formerly Terraform Cloud), and internally owned runners are not being used, then the relevant workspace will need be in local mode, and the user's IP address added to the network_rules ip_rules parameter. This is because the IP addresses for HCP Terraform shared runners are not published, and thus they cannot be reliably be added to the exception listed. For your awareness, HashiCorp does publish ip addresses for other services, via https://app.terraform.io/api/meta/ip-ranges, but they do not have any affect on the runners.
 
 ### Terraform Cloud considerations
 If leveraging Terraform Cloud there's it's recommended to utilize internal owned runners utilizing HCP Teraform Agents, which is documented [here](https://developer.hashicorp.com/terraform/cloud-docs/agents). The network of machine where the agent is installed can be linked to the storage account, utilizing a service endpoint. A subnet id, an example of an Azure one below, can be added to the network_rules virtual_network_subnet_ids variable.

@@ -35,10 +35,12 @@ data "azurerm_subnet" "default" {
   resource_group_name  = var.resource_group_name
 }
 
-data "azurerm_subnet" "private_endpoint" {
+resource "azurerm_subnet" "private_endpoint" {
   name                 = "private_endpoint"
-  virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
+  virtual_network_name = var.virtual_network_name
+  address_prefixes     = ["10.0.5.0/24"]
+  service_endpoints    = ["Microsoft.Storage"]
 }
 
 resource "random_id" "random_suffix" {
@@ -58,16 +60,14 @@ module "azure_storage_account_network_rules" {
   resource_group_name  = var.resource_group_name
 
   enable_private_networking  = true
-  private_endpoint_subnet_id = data.azurerm_subnet.private_endpoint.id
+  private_endpoint_subnet_id = azurerm_subnet.private_endpoint.id
   dns_zone_ids               = local.private_dns_zone_map
-
-  public_network_access_enabled = false
 
   network_rules = {
     # This could be a specific ip address for individual users, e.g., 20.94.5.238
     # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
     ip_rules                   = ["20.94.5.238"]
-    virtual_network_subnet_ids = [data.azurerm_subnet.default.id, data.azurerm_subnet.private_endpoint.id]
+    virtual_network_subnet_ids = [data.azurerm_subnet.default.id, azurerm_subnet.private_endpoint.id]
   }
 
   # Turning off the CanNotDelete management lock for testing purposes
