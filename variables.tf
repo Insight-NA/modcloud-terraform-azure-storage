@@ -547,7 +547,7 @@ variable "private_endpoint_subnet_id" {
 
 variable "public_network_access_enabled" {
   type        = bool
-  default     = false
+  default     = true
   description = "(Optional) Whether the public network access is enabled? Defaults to `true`."
 }
 

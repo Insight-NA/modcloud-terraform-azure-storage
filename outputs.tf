@@ -393,6 +393,38 @@ output "management_policy_id" {
   value       = try(azurerm_storage_management_policy.this[*].id, null)
 }
 
+### Private Endpoints
+
+output "private_endpoint_blob" {
+  description = "Blob Private Endpoint"
+  value       = try(azurerm_private_endpoint.blob[0], null)
+}
+
+output "private_endpoint_table" {
+  description = "Table Private Endpoint"
+  value       = try(azurerm_private_endpoint.table[0], null)
+}
+
+output "private_endpoint_queue" {
+  description = "Queue Private Endpoint"
+  value       = try(azurerm_private_endpoint.queue[0], null)
+}
+
+output "private_endpoint_file" {
+  description = "File Private Endpoint"
+  value       = try(azurerm_private_endpoint.file[0], null)
+}
+
+output "private_endpoint_web" {
+  description = "Blob Private Endpoint"
+  value       = try(azurerm_private_endpoint.web[0], null)
+}
+
+output "private_endpoint_dfs" {
+  description = "Blob Private Endpoint"
+  value       = try(azurerm_private_endpoint.dfs[0], null)
+}
+
 ### Queue
 
 output "storage_queue" {
