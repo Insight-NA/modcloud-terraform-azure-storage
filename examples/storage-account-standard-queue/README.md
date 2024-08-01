@@ -20,12 +20,6 @@ locals {
     org_code       = "insight"
     managed_by      = "terraform"
   }
-
-  tfc_ip_ranges = [
-    "52.86.200.106", "52.86.201.227", "52.70.186.109",
-    "44.236.246.186", "54.185.161.84", "44.238.78.236",
-    "75.2.98.97", "99.83.150.238"
-  ]
 }
 
 resource "random_id" "random_suffix" {

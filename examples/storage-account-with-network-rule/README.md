@@ -13,7 +13,7 @@ virtual_network_subnet_ids accepts a list of resource ids for subnets. Ideally, 
 /subscriptions/{subscriptionID}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetID}
 ```
 
-WARNING: If leveraging Terraform Cloud, you may need to add the terraform cloud agents subnet id's, e.g., /subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<snet> to the network_rules virtual_network_subnet_ids. Failure to do so may result in resources being deployed, but subsequent attempts to modify resources may produce a 403 Authorization Failure error.
+WARNING: If leveraging Terraform Cloud, you may need to have internally controlled runners with terraform cloud agents installed, and linking the subnet id's of where those runner machines reside, e.g., /subscriptions/<sub_id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<snet> to the network_rules virtual_network_subnet_ids. Failure to do so may result in resources being deployed, but subsequent attempts to modify resources may produce a 403 Authorization Failure error.
 
 ```hcl
 locals {
@@ -26,14 +26,8 @@ locals {
     department_id  = "678901"
     project_id     = "it-ab00c123"
     org_code       = "insight"
-    managedby      = "terraform"
+    managed_by     = "terraform"
   }
-
-  tfc_ip_ranges = [
-    "52.86.200.106", "52.86.201.227", "52.70.186.109",
-    "44.236.246.186", "54.185.161.84", "44.238.78.236",
-    "75.2.98.97", "99.83.150.238"
-  ]
 
   private_dns_zones = toset([
     "privatelink.blob.core.windows.net",
@@ -52,8 +46,15 @@ locals {
   }
 }
 
-data "azurerm_subnet" "test_sub" {
+
+data "azurerm_subnet" "default" {
   name                 = "default"
+  virtual_network_name = "module-testing-vnet"
+  resource_group_name  = var.resource_group_name
+}
+
+data "azurerm_subnet" "private_endpoint" {
+  name                 = "private_endpoint"
   virtual_network_name = "module-testing-vnet"
   resource_group_name  = var.resource_group_name
 }
@@ -75,14 +76,16 @@ module "azure_storage_account_network_rules" {
   resource_group_name  = var.resource_group_name
 
   enable_private_networking  = true
-  private_endpoint_subnet_id = data.azurerm_subnet.test_sub.id
+  private_endpoint_subnet_id = data.azurerm_subnet.private_endpoint.id
   dns_zone_ids               = local.private_dns_zone_map
+
+  public_network_access_enabled = true
 
   network_rules = {
     # This could be a specific ip address for individual users, e.g., 20.94.5.238
     # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
-    ip_rules = concat(local.tfc_ip_ranges, ["20.94.5.238"])
-    virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
+    ip_rules = ["20.94.5.238"]
+    virtual_network_subnet_ids = [data.azurerm_subnet.default.id, data.azurerm_subnet.private_endpoint.id]
   }
 
   # Turning off the CanNotDelete management lock for testing purposes
