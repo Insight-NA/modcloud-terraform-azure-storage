@@ -8,7 +8,7 @@ locals {
     department_id  = "678901"
     project_id     = "it-ab00c123"
     org_code       = "insight"
-    managed_by      = "terraform"
+    managed_by     = "terraform"
   }
 }
 
