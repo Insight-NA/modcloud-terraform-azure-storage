@@ -28,7 +28,6 @@ locals {
   }
 }
 
-
 data "azurerm_subnet" "default" {
   name                 = "default"
   virtual_network_name = var.virtual_network_name
