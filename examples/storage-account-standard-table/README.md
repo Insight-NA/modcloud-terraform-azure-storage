@@ -6,26 +6,31 @@
 ## How to Use this Module
 
 ```hcl
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
+locals {
+  tags = {
+    env            = "dev"
+    app_code       = "storage"
+    app_instance   = "table"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+    org_code       = "insight"
+    managed_by      = "terraform"
+  }
+}
 
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+resource "random_id" "random_suffix" {
+  byte_length = 8
 }
 
 module "azure_storage_table" {
-  source                     = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                    = "~>4.2.0"
-  tags                     = module.tagging.labels
-  resource_group_name      = var.resource_group_name
+  source  = "app.terraform.io/insight/azure-storage/terraform"
+  version = "1.0.0"
+  
+  tags                 = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
+  resource_group_name  = var.resource_group_name
 
   storage_table = [
     {
@@ -81,7 +86,6 @@ module "azure_storage_table" {
     }
   ]
 }
-
 ```
 
 ## Azure Table Storage

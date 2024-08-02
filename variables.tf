@@ -39,6 +39,12 @@ variable "account_tier" {
   }
 }
 
+variable "allow_nested_items_to_be_public" {
+  type        = bool
+  default     = false
+  description = "(Optional) Allow or disallow nested items within this Account to opt into being public. Defaults to false."
+}
+
 variable "allowed_copy_scope" {
   type        = string
   default     = null
@@ -178,6 +184,12 @@ EOT
   nullable    = true
 }
 
+variable "cross_tenant_replication_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Should cross Tenant replication be enabled? Defaults to false."
+}
+
 variable "custom_domain" {
   type = object({
     name          = string
@@ -253,16 +265,37 @@ The `timeouts` block supports the following:
   EOT
 }
 
+variable "dns_zone_ids" {
+  description = "A Map of DNS zone ids from the private DNS zones module, dns_zone name is the key"
+  type = map(object({
+    name = string
+    id   = string
+  }))
+  default = {}
+}
+
 variable "default_to_oauth_authentication" {
   type        = bool
   default     = false
   description = "(Optional) Default to Azure Active Directory authorization in the Azure portal when accessing the Storage Account. The default value is `false`"
 }
 
+variable "enable_https_traffic_only" {
+  type        = bool
+  default     = true
+  description = "(Optional) Boolean flag which forces HTTPS if enabled, see here for more information. Defaults to true."
+}
+
 variable "edge_zone" {
   type        = string
   default     = null
   description = "(Optional) Specifies the Edge Zone within the Azure Region where this Storage Account should exist. Changing this forces a new Storage Account to be created."
+}
+
+variable "enable_private_networking" {
+  description = "Declare whether Private Networking should be leveraged (VNet integration and Private Endpoints)."
+  type        = bool
+  default     = false
 }
 
 variable "identity" {
@@ -275,6 +308,12 @@ variable "identity" {
  - `identity_ids` - (Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Storage Account.
  - `type` - (Required) Specifies the type of Managed Service Identity that should be configured on this Storage Account. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned` (to enable both).
 EOT
+}
+
+variable "infrastructure_encryption_enabled" {
+  type        = bool
+  default     = false
+  description = "(Optional) Is infrastructure encryption enabled? Changing this forces a new resource to be created. Defaults to false."
 }
 
 variable "immutability_policy" {
@@ -449,7 +488,7 @@ variable "min_tls_version" {
 
 variable "network_rules" {
   type = object({
-    hca_ips_enabled            = optional(bool, false)
+    default_action             = optional(string, "Deny")
     bypass                     = optional(set(string), ["Logging", "Metrics", "AzureServices"])
     ip_rules                   = optional(list(string), [])
     virtual_network_subnet_ids = optional(set(string))
@@ -466,7 +505,7 @@ variable "network_rules" {
   })
   default     = {}
   description = <<-EOT
- - `hca_ip_enabled` - (Optional) Enables HCA Terraform Cloud <region 1> US and <region 2> US networks access to deployed resources. Setting to `false` is NOT recommend, but there may be specific use cases. Defaults to `true`.
+ - `default_action` - (Optional) Specifies the default action of allow or deny when no other rules match. Valid options are Deny or Allow. Defaults to Deny.
  - `bypass` - (Optional) Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Valid options are any combination of `Logging`, `Metrics`, `AzureServices`, or `None`.
  - `ip_rules` - (Optional) List of public IP or IP ranges in CIDR Format. Only IPv4 addresses are allowed. Private IP address ranges (as defined in [RFC 1918](https://tools.ietf.org/html/rfc1918#section-3)) are not allowed.
  - `storage_account_id` - (Required) Specifies the ID of the storage account. Changing this forces a new resource to be created.
@@ -494,50 +533,16 @@ variable "nfsv3_enabled" {
   description = "(Optional) Is NFSv3 protocol enabled? Changing this forces a new resource to be created. Defaults to `false`."
 }
 
-variable "private_dns_zones_for_private_link" {
-  type = map(object({
-    resource_group_name       = string
-    name                      = string
-    virtual_network_link_name = string
-  }))
-  default     = {}
-  description = <<-EOT
-  A map of private dns zones that used to create corresponding a records and cname records for the private endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.
-  - `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.
-  - `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `privatelink.blob.core.windows.net`. Changing this forces a new resource to be created.
-  - `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link.
-EOT
-  nullable    = false
-
-  validation {
-    condition = alltrue([
-      for n, z in var.private_dns_zones_for_private_link : contains(["blob", "table", "queue", "share"], n)
-    ])
-    error_message = "The map's key must be one of `blob`, `table`, `queue`, `share`."
-  }
+variable "private_endpoint_resource_group_name" {
+  description = "The name of the resource group where the private endpoint resources will be deployed."
+  type        = string
+  default     = ""
 }
 
-variable "private_dns_zones_for_public_endpoint" {
-  type = map(object({
-    resource_group_name       = string
-    name                      = string
-    virtual_network_link_name = string
-  }))
-  default     = {}
-  description = <<-EOT
-  A map of private dns zones that used to create corresponding a records and cname records for the public endpoints, the key is static string for the storage service, like `blob`, `table`, `queue`.
-  - `resource_group_name` - (Required) Specifies the resource group where the resource exists. Changing this forces a new resource to be created.
-  - `name` - (Required) The name of the Private DNS Zone for private link endpoint. Must be a valid domain name, e.g.: `blob.core.windows.net`. Changing this forces a new resource to be created.
-  - `virtual_network_link_name` - (Required) The name of the Private DNS Zone Virtual Network Link.
-EOT
-  nullable    = false
-
-  validation {
-    condition = alltrue([
-      for n, z in var.private_dns_zones_for_public_endpoint : contains(["table", "queue"], n)
-    ])
-    error_message = "The map's key must be one of `table`, `queue`."
-  }
+variable "private_endpoint_subnet_id" {
+  description = "The ID of the subnet for the Private Endpoint."
+  type        = string
+  default     = null
 }
 
 variable "public_network_access_enabled" {
@@ -632,11 +637,13 @@ variable "resource_group_name" {
 variable "routing" {
   type = object({
     choice                      = optional(string)
+    publish_internet_endpoints  = optional(bool)
     publish_microsoft_endpoints = optional(bool)
   })
   default     = null
   description = <<-EOT
  - `choice` - (Optional) Specifies the kind of network routing opted by the user. Possible values are `InternetRouting` and `MicrosoftRouting`. Defaults to `MicrosoftRouting`.
+ - `publish_internet_endpoints` - (Optional) Should internet routing storage endpoints be published? Defaults to `false`.
  - `publish_microsoft_endpoints` - (Optional) Should Microsoft routing storage endpoints be published? Defaults to `false`.
 EOT
 }
@@ -678,6 +685,7 @@ variable "share_properties" {
       channel_encryption_type         = optional(set(string))
       kerberos_ticket_encryption_type = optional(set(string))
       multichannel_enabled            = optional(bool)
+      versions                        = optional(set(string))
     }))
   })
   default     = null
@@ -701,6 +709,7 @@ variable "share_properties" {
  - `channel_encryption_type` - (Optional) A set of SMB channel encryption. Possible values are `AES-128-CCM`, `AES-128-GCM`, and `AES-256-GCM`.
  - `kerberos_ticket_encryption_type` - (Optional) A set of Kerberos ticket encryption. Possible values are `RC4-HMAC`, and `AES-256`.
  - `multichannel_enabled` - (Optional) Indicates whether multichannel is enabled. Defaults to `false`. This is only supported on Premium storage accounts.
+ - `versions` - (Optional) A set of SMB protocol versions. Possible values are SMB2.1, SMB3.0, and SMB3.1.1.
 EOT
 }
 
@@ -794,7 +803,6 @@ EOT
 variable "storage_account_name" {
   type        = string
   description = "(Required) Specifies the name of the storage account. Only lowercase Alphanumeric characters allowed. Changing this forces a new resource to be created. This must be unique across the entire Azure service, not just within the resource group."
-  default     = null
 }
 
 variable "storage_container" {

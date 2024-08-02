@@ -8,34 +8,38 @@
 This example will create a storage account with two queues. The only required portion is the name attribute under storage_queue. Currently defaults to Standard StorageV2 with Read-Access Geo-Redunant replication. The optional queue_properties show an example of additional configuration settings that are available.
 
 ```hcl
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
+locals {
+  tags = {
+    env            = "dev"
+    app_code       = "storage"
+    app_instance   = "queue"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+    org_code       = "insight"
+    managed_by      = "terraform"
+  }
+}
 
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+resource "random_id" "random_suffix" {
+  byte_length = 8
 }
 
 module "azure_storage_queue" {
-  source                  = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                 = "~>4.2.0"
+  source  = "app.terraform.io/insight/azure-storage/terraform"
+  version = "1.0.0"
 
-  tags                     = module.tagging.labels
-  resource_group_name      = var.resource_group_name
+  tags                 = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
+  resource_group_name  = var.resource_group_name
 
   storage_queue = [
-    { 
+    {
       name = "queue-first"
       metadata = {
-        testkey = "testvalue"
-        queuetype = module.azure_storage_queue.storage_account_tier
+        testkey        = "testvalue"
+        queuetype      = module.azure_storage_queue.storage_account_tier
         classification = module.tagging.labels.classification
       }
     },
@@ -43,15 +47,14 @@ module "azure_storage_queue" {
       name = "queue-second"
     }
   ]
-
   queue_properties = {
     cors_rule = [{
-        allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
-        allowed_methods    = ["PUT", "GET"]
-        allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
-        exposed_headers    = ["x-ms-meta-*"]
-        max_age_in_seconds = 200
-      }]
+      allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
+      allowed_methods    = ["PUT", "GET"]
+      allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
+      exposed_headers    = ["x-ms-meta-*"]
+      max_age_in_seconds = 200
+    }]
     logging = {
       delete                = true
       read                  = true

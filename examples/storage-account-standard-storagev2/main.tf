@@ -1,37 +1,40 @@
-data "azurerm_subnet" "test_sub" {
-  provider             = hcaazurerm3
+locals {
+  tags = {
+    env            = "dev"
+    app_code       = "storage"
+    app_instance   = "storagev2"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+    org_code       = "insight"
+    managed_by     = "terraform"
+  }
+}
+
+data "azurerm_subnet" "default" {
   name                 = "default"
   virtual_network_name = var.virtual_network_name
   resource_group_name  = var.resource_group_name
 }
 
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
-
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+resource "random_id" "random_suffix" {
+  byte_length = 8
 }
 
 module "azure_storage_account_standard_storagev2" {
-  source              = "../../"
-  tags                = module.tagging.labels
-  resource_group_name = var.resource_group_name
+  source               = "../../"
+  tags                 = local.tags
+  storage_account_name = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
+  resource_group_name  = var.resource_group_name
 
-  management_locks = {
-    CanNotDelete = false
-    ReadOnly     = false
-  }
-
+  public_network_access_enabled = false
   network_rules = {
-    virtual_network_subnet_ids = [data.azurerm_subnet.test_sub.id]
+    default_action = "Deny"
+    # This could be a specific ip address for individual users, e.g., 20.94.5.238
+    # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
+    ip_rules                   = ["20.94.5.238"]
+    virtual_network_subnet_ids = [data.azurerm_subnet.default.id]
   }
 
   storage_container = [
@@ -188,7 +191,7 @@ module "azure_storage_account_standard_storagev2" {
       metadata = {
         testkey        = "testvalue"
         queuetype      = module.azure_storage_account_standard_storagev2.storage_account_tier
-        classification = module.tagging.labels.classification
+        classification = local.tags.classification
       }
     },
     {

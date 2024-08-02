@@ -11,25 +11,30 @@ NOTE: Fileshares of the 'NFS' protocol are not supported at this time. The NFS p
 CAUTION: Nested fileshare directories are not possible at this time due to potential dependencies, and resource creation & destroy ordering. 
 
 ```hcl
-module "tagging" {
-  source  = "app.terraform.io/hca-healthcare/tagging/hca"
-  version = "~> 0.2"
+locals {
+  tags = {
+    env            = "dev"
+    app_code       = "storage"
+    app_instance   = "fileshare"
+    classification = "internal-only"
+    cost_id        = "12345"
+    department_id  = "678901"
+    project_id     = "it-ab00c123"
+    org_code       = "insight"
+    managed_by     = "terraform"
+  }
+}
 
-  app_environment = "prod"
-  app_code        = "tst"
-  app_instance    = "tbd"
-  classification  = "internal-only"
-  cost_id         = "12345"
-  department_id   = "678901"
-  project_id      = "it-ab00c123"
-  tco_id          = "abc"
-  sc_group        = "corp-infra-cloud-platform"
+resource "random_id" "random_suffix" {
+  byte_length = 8
 }
 
 module "azure_storage_fileshare_premium" {
-  source                   = "app.terraform.io/hca-healthcare/storageaccount/azure"
-  version                  = "~>4.2.0"
-  tags                     = module.tagging.labels
+  source  = "app.terraform.io/insight/azure-storage/terraform"
+  version = "1.0.0"
+  
+  tags                     = local.tags
+  storage_account_name     = substr(format("st%s%s%s%s", local.tags.app_code, local.tags.env, local.tags.app_instance, random_id.random_suffix.hex), 0, 24)
   resource_group_name      = var.resource_group_name
   account_kind             = "FileStorage"
   account_replication_type = "ZRS"
@@ -79,28 +84,30 @@ module "azure_storage_fileshare_premium" {
           ]
         }
       ]
-
-      share_properties = {
-        cors_rule = {
-          allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
-          allowed_methods    = ["PUT", "GET"]
-          allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
-          exposed_headers    = "x-ms-meta-*"
-          max_age_in_seconds = 200
-        }
-        retention_policy = {
-          days = 8
-        }
-        smb = {
-          versions                        = "SMB3.1.1"
-          authentication_types            = "Kerberos"
-          kerberos_ticket_encryption_type = "AES-256"
-          channel_encryption_type         = "AES-256-GCM"
-          multichannel_enabled            = true
-        }
-      }
     }
   ]
+
+  share_properties = {
+    cors_rule = [
+      {
+        allowed_headers    = ["x-ms-meta-data*", "x-ms-meta-target*"]
+        allowed_methods    = ["PUT", "GET"]
+        allowed_origins    = ["http://*.contoso.com", "http://www.fabrikam.com"]
+        exposed_headers    = ["x-ms-meta-*"]
+        max_age_in_seconds = 200
+      }
+    ]
+    retention_policy = {
+      days = 8
+    }
+    smb = {
+      versions                        = ["SMB3.1.1"]
+      authentication_types            = ["Kerberos"]
+      kerberos_ticket_encryption_type = ["AES-256"]
+      channel_encryption_type         = ["AES-256-GCM"]
+      multichannel_enabled            = true
+    }
+  }
 }
 ```
 
