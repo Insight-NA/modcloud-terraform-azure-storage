@@ -18,7 +18,7 @@ resource "azurerm_storage_account" "this" {
   cross_tenant_replication_enabled  = var.cross_tenant_replication_enabled
   default_to_oauth_authentication   = var.default_to_oauth_authentication
   edge_zone                         = var.edge_zone
-  https_traffic_only_enabled         = var.https_traffic_only_enabled
+  https_traffic_only_enabled        = var.enable_https_traffic_only
   infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
   is_hns_enabled                    = var.is_hns_enabled
   large_file_share_enabled          = var.large_file_share_enabled
