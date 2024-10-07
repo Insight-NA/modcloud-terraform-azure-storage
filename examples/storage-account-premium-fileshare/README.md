@@ -6,7 +6,7 @@
 
 This example will create a storage account with two fileshares. The only required portion is the name and quota attributes under storage_storage, and the account replication type must be either 'LRS' or 'ZRS'. If a different account replication type is a must, use account kind 'StorageV2' and account tier 'Standard'. Storage accounts of the kind 'FileStorage' are of the account tier 'Premium'.
 
-NOTE: Fileshares of the 'NFS' protocol are not supported at this time. The NFS protocol does not support encryption and relies on network-level security, however HCA policy requires enable_https_traffic_only be set to true.
+NOTE: Fileshares of the 'NFS' protocol are not supported at this time. The NFS protocol does not support encryption and relies on network-level security, however HCA policy requires https_traffic_only_enabled be set to true.
 
 CAUTION: Nested fileshare directories are not possible at this time due to potential dependencies, and resource creation & destroy ordering. 
 

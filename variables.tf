@@ -280,7 +280,7 @@ variable "default_to_oauth_authentication" {
   description = "(Optional) Default to Azure Active Directory authorization in the Azure portal when accessing the Storage Account. The default value is `false`"
 }
 
-variable "enable_https_traffic_only" {
+variable "https_traffic_only_enabled" {
   type        = bool
   default     = true
   description = "(Optional) Boolean flag which forces HTTPS if enabled, see here for more information. Defaults to true."

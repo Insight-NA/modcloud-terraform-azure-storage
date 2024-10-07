@@ -45,7 +45,7 @@ Changing the name for these resources and fields will cause a replace of the res
 
 | Resource | Changing this field will force a new resource to be created |
 |----------|-----------------------------------|
-| azurerm_storage_account | name <br>resource_group_name <br>location <br>account_tier <br>edge_zone <br>enable_https_traffic_only <br>is_hns_enabled <br>nfsv3_enabled <br>queue_encryption_key_type <br>table_encryption_key_type <br>infrastructure_encryption_enabled <br>immutability_policy |
+| azurerm_storage_account | name <br>resource_group_name <br>location <br>account_tier <br>edge_zone <br>https_traffic_only_enabled <br>is_hns_enabled <br>nfsv3_enabled <br>queue_encryption_key_type <br>table_encryption_key_type <br>infrastructure_encryption_enabled <br>immutability_policy |
 | azurerm_storage_account_network_rules | storage_account_id |
 | azurerm_storage_blob_inventory_policy | storage_account_id |
 |azurerm_storage_management_policy | storage_account_id |
@@ -114,7 +114,7 @@ tfc_agent_<region>_subnet_id    = "/subscriptions/<sub_id>/resourceGroups/<rg>/p
 To enable Private Endpoints, set the enable_private_networking variable to true, and private_endpoint_subnet_id and dns_zone_ids will need to be populated. dns_zone_ids is a map of object with name and id parameters. Optionally, the private_endpoint_resource_group_name variable can be populated if the resource group is different than the resource_group_name variable value.
 
 ### Secure Transfer
-Secure transfer with HTTPS only traffic can be enforced with the enable_https_traffic_only variable; it currently defaults to true. This is generally recommended, the exception being this must be disabled when using NFS (Network File System) Azure File Shares. Additionally, this setting will not be applied for custom domain names.
+Secure transfer with HTTPS only traffic can be enforced with the https_traffic_only_enabled variable; it currently defaults to true. This is generally recommended, the exception being this must be disabled when using NFS (Network File System) Azure File Shares. Additionally, this setting will not be applied for custom domain names.
 
 ### Infrastructure Encryption
 Azure Storage automatically encrypts all data in a storage account at the service level using 256-bit AES with GCM (Galois/Counter Mode) encryption and is FIPS 140-2 compliant. If compliance requirements require more, an additional layer of 256-bit AES CBC (Cipher Block Chaining) encryption is available using the infrastructure_encryption_enabled variable. This module currently implements only Microsoft-managed keys for this option. Otherwise, enabling this feature may impact peformance, and is irreversibile once set (storage account would have to be destroyed and recreated to turn off this f).
@@ -471,14 +471,14 @@ module "azure_storage_account_standard_storagev2" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~>1.3 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~>3.95 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >=3.6.0 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | =3.116.0 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >=3.6.0, < 4.0.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~>3.95 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | =3.116.0 |
 
 ## Modules
 
@@ -531,8 +531,8 @@ No modules.
 | <a name="input_default_to_oauth_authentication"></a> [default\_to\_oauth\_authentication](#input\_default\_to\_oauth\_authentication) | (Optional) Default to Azure Active Directory authorization in the Azure portal when accessing the Storage Account. The default value is `false` | `bool` | `false` | no |
 | <a name="input_dns_zone_ids"></a> [dns\_zone\_ids](#input\_dns\_zone\_ids) | A Map of DNS zone ids from the private DNS zones module, dns\_zone name is the key | <pre>map(object({<br>    name = string<br>    id   = string<br>  }))</pre> | `{}` | no |
 | <a name="input_edge_zone"></a> [edge\_zone](#input\_edge\_zone) | (Optional) Specifies the Edge Zone within the Azure Region where this Storage Account should exist. Changing this forces a new Storage Account to be created. | `string` | `null` | no |
-| <a name="input_enable_https_traffic_only"></a> [enable\_https\_traffic\_only](#input\_enable\_https\_traffic\_only) | (Optional) Boolean flag which forces HTTPS if enabled, see here for more information. Defaults to true. | `bool` | `true` | no |
 | <a name="input_enable_private_networking"></a> [enable\_private\_networking](#input\_enable\_private\_networking) | Declare whether Private Networking should be leveraged (VNet integration and Private Endpoints). | `bool` | `false` | no |
+| <a name="input_https_traffic_only_enabled"></a> [https\_traffic\_only\_enabled](#input\_https\_traffic\_only\_enabled) | (Optional) Boolean flag which forces HTTPS if enabled, see here for more information. Defaults to true. | `bool` | `true` | no |
 | <a name="input_identity"></a> [identity](#input\_identity) | - `identity_ids` - (Optional) Specifies a list of User Assigned Managed Identity IDs to be assigned to this Storage Account.<br>- `type` - (Required) Specifies the type of Managed Service Identity that should be configured on this Storage Account. Possible values are `SystemAssigned`, `UserAssigned`, `SystemAssigned, UserAssigned` (to enable both). | <pre>object({<br>    identity_ids = optional(map(string))<br>    type         = string<br>  })</pre> | `null` | no |
 | <a name="input_immutability_policy"></a> [immutability\_policy](#input\_immutability\_policy) | - `allow_protected_append_writes` - (Required) When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted.<br>- `period_since_creation_in_days` - (Required) The immutability period for the blobs in the container since the policy creation, in days.<br>- `state` - (Required) Defines the mode of the policy. `Disabled` state disables the policy, `Unlocked` state allows increase and decrease of immutability retention time and also allows toggling allowProtectedAppendWrites property, `Locked` state only allows the increase of the immutability retention time. A policy can only be created in a Disabled or Unlocked state and can be toggled between the two states. Only a policy in an Unlocked state can transition to a Locked state which cannot be reverted. | <pre>object({<br>    allow_protected_append_writes = bool<br>    period_since_creation_in_days = number<br>    state                         = string<br>  })</pre> | `null` | no |
 | <a name="input_infrastructure_encryption_enabled"></a> [infrastructure\_encryption\_enabled](#input\_infrastructure\_encryption\_enabled) | (Optional) Is infrastructure encryption enabled? Changing this forces a new resource to be created. Defaults to false. | `bool` | `false` | no |

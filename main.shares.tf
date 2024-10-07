@@ -56,7 +56,7 @@ resource "azurerm_storage_share" "this" {
   lifecycle {
     precondition {
       condition     = alltrue([for share in var.storage_share : share.enabled_protocol == "NFS" ? false : true])
-      error_message = "Fileshares of the 'NFS' protocol are not supported at this time. The NFS protocol does not support encryption and relies on network-level security, however HCA policy requires enable_https_traffic_only be set to true."
+      error_message = "Fileshares of the 'NFS' protocol are not supported at this time. The NFS protocol does not support encryption and relies on network-level security, however HCA policy requires https_traffic_only_enabled be set to true."
     }
   }
 }
