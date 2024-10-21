@@ -33,7 +33,7 @@ module "azure_storage_account_standard_storagev2" {
     default_action = "Deny"
     # This could be a specific ip address for individual users, e.g., 20.94.5.238
     # or an ip range for a group of users (VPN), e.g., 20.128.0.0/16
-    ip_rules                   = ["20.94.5.238"]
+    ip_rules                   = ["20.94.5.128"]
     virtual_network_subnet_ids = [data.azurerm_subnet.default.id]
   }
 
