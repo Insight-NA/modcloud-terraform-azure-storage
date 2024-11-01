@@ -4,9 +4,12 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: "terraform"
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
+    ignore:
+      - dependency-name: "hashicorp/azurerm"
+        versions: ">= 4.x"
