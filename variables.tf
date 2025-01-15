@@ -348,13 +348,13 @@ variable "management_locks" {
     ReadOnly     = optional(bool)
   })
   default = {
-    CanNotDelete = true
+    CanNotDelete = false
     ReadOnly     = false
   }
   description = <<-EOT
   A map of management locks
-  - `CanNotDelete` - (Required) Storage Account level CanNotDelete Management Lock. Authorized users are able to read and modify the resources, but not delete. Defaults to `true`. Changing this forces a new resource to be created.
-  - `ReadyOnly` - (Optional) Storage Account level ReadOnly Management Lock. Authorized users can only read from a resource, but they can't modify or delete. Defaults to `false`. Changing this forces a new resource to be created.
+  - `CanNotDelete` - (Required) Storage Account level CanNotDelete Management Lock. Authorized users are able to read and modify the resources, but not delete. Defaults to `true`.
+  - `ReadyOnly` - (Optional) Storage Account level ReadOnly Management Lock. Authorized users can only read from a resource, but they can't modify or delete. Defaults to `false`.
 EOT
   nullable    = false
 }
