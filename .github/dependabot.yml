@@ -10,6 +10,3 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
-    ignore:
-      - dependency-name: "hashicorp/azurerm"
-        versions: ">= 4.x"
