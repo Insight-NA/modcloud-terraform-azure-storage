@@ -111,7 +111,7 @@ resource "azurerm_storage_account" "this" {
     for_each = var.identity == null ? [] : [var.identity]
     content {
       type         = identity.value.type
-      identity_ids = toset(values(identity.value.identity_ids))
+      identity_ids = identity.value.identity_ids != null ? toset(values(identity.value.identity_ids)) : null
     }
   }
   dynamic "immutability_policy" {
